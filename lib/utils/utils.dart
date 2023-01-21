@@ -22,6 +22,9 @@ extension IntExtensions on int {
   String addLeadingZeros(int numberOfTotalDigits) =>
       toStringAsFixed(0).padLeft(numberOfTotalDigits, '0');
 
+  String addLeadingSpace(int numberOfTotalDigits) =>
+      toStringAsFixed(0).padLeft(numberOfTotalDigits, ' ');
+
   double get toKmph => this * 3.6;
   double get toMph => this / 3.6;
 }

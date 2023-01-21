@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:tachymetre/widgets/graph_painter.dart';
 
@@ -20,34 +22,39 @@ class Graph extends StatefulWidget {
 class _GraphState extends State<Graph> with SingleTickerProviderStateMixin {
   AnimationController? _controller;
   final List<double> _data = [];
+  String timestamp = DateTime.now().toIso8601String();
 
   @override
   void initState() {
     super.initState();
 
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(
-        milliseconds: 250,
-      ),
-    );
-    _controller!.forward();
+    Timer.periodic(const Duration(milliseconds: 250), (timer) {
+      addDataPoint(widget.input);
+      setState(() {
+        timestamp = DateTime.now().toIso8601String();
+      });
+    });
   }
 
-  @override
-  Widget build(BuildContext context) {
+  void addDataPoint(double data) {
     if (_data.length >= widget.width) {
       debugPrint('removed _data[${_data.length}]: ${_data.last}');
       _data.removeLast();
     }
-    final input = widget.input;
-    _data.insert(0, input);
+    _data.insert(
+      0,
+      data,
+    );
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    addDataPoint(widget.input);
     return CustomPaint(
       willChange: true,
       painter: GraphPainter(
         data: _data,
-        listenable: _controller!,
+        timestamp: timestamp,
       ),
       child: widget.child,
     );

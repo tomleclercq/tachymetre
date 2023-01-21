@@ -148,7 +148,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Tachymetre(
-                        width: isHorizontal ? screen.width : screen.height,
+                        width: isHorizontal ? screen.width : screen.height ,
                       ),
                     ),
                   ),

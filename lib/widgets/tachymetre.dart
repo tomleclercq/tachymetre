@@ -41,7 +41,7 @@ class _TachymetreState extends State<Tachymetre>
     final rounded = MathUtils.round(
             _animation != null ? _animation!.value : speedInKmphAdjusted, 0)
         .ceil();
-    return rounded.addLeadingZeros(3);
+    return rounded.addLeadingSpace(3);
   }
 
   @override
