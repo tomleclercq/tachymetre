@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:tachymetre/utils/display_utils.dart';
 import 'package:tachymetre/widgets/tachymetre.dart';
 
+bool devMode = false;
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(
@@ -60,9 +61,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int quarterTurns = 3;
-  bool mirror = true;
+  int quarterTurns = devMode ? 0 : 3;
+  bool mirror = !devMode;
   double brightness = 1.0;
+
+  bool get isHorizontal => quarterTurns % 2 == 0;
 
   @override
   void initState() {
@@ -82,8 +85,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void reset() {
     setState(() {
-      quarterTurns = 1;
-      mirror = true;
+      quarterTurns = devMode ? 0 : 3;
+      mirror = !devMode;
     });
   }
 
@@ -113,6 +116,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final screen = MediaQuery.of(context).size;
     return Scaffold(
 //      extendBody :true,
       body: GestureDetector(
@@ -141,9 +145,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   scaleY: mirror ? -1 : 1,
                   child: RotatedBox(
                     quarterTurns: quarterTurns,
-                    child: const FittedBox(
+                    child: FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Tachymetre(),
+                      child: Tachymetre(
+                        width: isHorizontal ? screen.width : screen.height,
+                      ),
                     ),
                   ),
                 ),

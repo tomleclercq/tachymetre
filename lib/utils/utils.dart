@@ -15,3 +15,13 @@ extension DoubleExtensions on double {
   double get toKmph => this * 3.6;
   double get toMph => this / 3.6;
 }
+
+extension IntExtensions on int {
+  ///returns a String with leading zeros.
+  ///1 would be with the [numberOfTotalDigits] = 3 lead to a string '001'
+  String addLeadingZeros(int numberOfTotalDigits) =>
+      toStringAsFixed(0).padLeft(numberOfTotalDigits, '0');
+
+  double get toKmph => this * 3.6;
+  double get toMph => this / 3.6;
+}

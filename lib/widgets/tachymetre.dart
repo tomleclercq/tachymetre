@@ -2,13 +2,17 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:basic_utils/basic_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tachymetre/utils/utils.dart';
+import 'package:tachymetre/widgets/graph.dart';
 
 class Tachymetre extends StatefulWidget {
-  const Tachymetre({super.key});
+  const Tachymetre({required this.width, super.key});
+  final double width;
   @override
   State<Tachymetre> createState() => _TachymetreState();
 }
@@ -34,11 +38,10 @@ class _TachymetreState extends State<Tachymetre>
 
   String get textDisplayed {
     if (output != null) return output!;
-    if (_animation != null) {
-      return _animation!.value.addLeadingZeros(6);
-    } else {
-      return speedInKmphAdjusted.addLeadingZeros(6);
-    }
+    final rounded = MathUtils.round(
+            _animation != null ? _animation!.value : speedInKmphAdjusted, 0)
+        .ceil();
+    return rounded.addLeadingZeros(3);
   }
 
   @override
@@ -48,7 +51,7 @@ class _TachymetreState extends State<Tachymetre>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(
-        milliseconds: 200,
+        milliseconds: 300,
       ),
     );
 
@@ -121,6 +124,21 @@ class _TachymetreState extends State<Tachymetre>
 
   void updateSpeed(double newSpeedKmph) {
     _controller!.reset();
+    _controller!.stop();
+
+    debugPrint('newSpeedKmph: $newSpeedKmph');
+    debugPrint('speedInKmphAdjusted: $speedInKmphAdjusted');
+    double timeFactor =
+        1 - (((newSpeedKmph - speedInKmphAdjusted).abs()) / 120);
+    timeFactor = min(max(0, timeFactor), 1);
+    debugPrint('timeFactor: $timeFactor');
+    final newDuration = lerpDuration(
+      const Duration(milliseconds: 200),
+      const Duration(milliseconds: 1000),
+      timeFactor,
+    );
+    debugPrint('newDuration: $newDuration');
+    _controller?.duration = newDuration;
     _animation = Tween<double>(
       begin: speedInKmphAdjusted,
       end: newSpeedKmph,
@@ -155,16 +173,27 @@ class _TachymetreState extends State<Tachymetre>
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      textDisplayed,
-      overflow: TextOverflow.fade,
-      softWrap: true,
-      maxLines: 3,
-      style: GoogleFonts.robotoMono(
-        fontWeight: FontWeight.w200,
-        fontSize:
-            output != null ? 55 : 220, // quarterTurns % 2 == 0 ? 100 : 200,
-        color: getTextColor(),
+    return Graph(
+      width: widget.width,
+      input: displayedValue,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Text(
+            textDisplayed,
+            overflow: TextOverflow.fade,
+            softWrap: true,
+            maxLines: 3,
+            style: GoogleFonts.robotoMono(
+              fontWeight: FontWeight.w200,
+              fontSize: output != null
+                  ? 55
+                  : 220, // quarterTurns % 2 == 0 ? 100 : 200,
+              color: getTextColor(),
+            ),
+          ),
+          const SizedBox(height: 70),
+        ],
       ),
     );
   }
