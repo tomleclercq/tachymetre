@@ -1,4 +1,4 @@
-package be.tomleclercq.tachimeter
+package be.tomleclercq.tachymetre
 
 import io.flutter.embedding.android.FlutterActivity
 

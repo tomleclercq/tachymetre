@@ -43,7 +43,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "be.tomleclercq.tachimeter"
+        applicationId "be.tomleclercq.tachymetre"
 
         minSdkVersion 16 //flutter.minSdkVersion
         targetSdkVersion 32 //flutter.targetSdkVersion
@@ -59,7 +59,7 @@ android {
             signingConfig signingConfigs.debug
         }
     }
-    namespace 'be.tomleclercq.tachimeter'
+    namespace 'be.tomleclercq.tachymetre'
 }
 
 flutter {

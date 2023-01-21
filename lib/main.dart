@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:tachimeter/display_utils.dart';
-import 'package:tachimeter/tachymetre.dart';
+import 'package:tachymetre/display_utils.dart';
+import 'package:tachymetre/tachymetre.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

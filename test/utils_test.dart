@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tachimeter/utils.dart';
+import 'package:tachymetre/utils.dart';
 
 void main() {
   test('utils ...', () {

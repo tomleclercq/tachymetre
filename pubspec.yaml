@@ -1,7 +1,7 @@
-name: tachimeter
+name: tachymetre
 description: A new Flutter project.
 publish_to: 'none'
-version: 1.0.2+2
+version: 1.0.4+4
 
 environment:
   sdk: '>=2.18.6 <3.0.0'

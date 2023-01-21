@@ -1,4 +1,4 @@
-# tachimeter
+# tachymetre
 
 A new Flutter project.
 

@@ -5,7 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tachimeter/utils.dart';
+import 'package:tachymetre/utils.dart';
 
 class Tachymetre extends StatefulWidget {
   const Tachymetre({super.key});
