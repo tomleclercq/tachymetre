@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tachimeter/display_utils.dart';
-import 'package:tachimeter/tachimeter.dart';
+import 'package:tachimeter/tachymetre.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -143,7 +143,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     quarterTurns: quarterTurns,
                     child: const FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Tachimeter(),
+                      child: Tachymetre(),
                     ),
                   ),
                 ),
