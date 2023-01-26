@@ -1,26 +1,72 @@
 import 'package:flutter/material.dart';
+import 'package:tachymetre/utils/utils.dart';
 
 class GraphPainter extends CustomPainter {
-  GraphPainter({
+  GraphPainter(
+    this.context, {
     required this.data,
     required this.timestamp,
-  }) : super();
+    required this.listenable,
+  }) : super(repaint: listenable);
+
+  BuildContext context;
   final String timestamp;
   final List<double> data;
+  final Animation listenable;
+  final heightFactor = 0.85;
+
+  void drawAxis(
+    Canvas canvas, {
+    required Color color,
+    required double xMin,
+    required double xMax,
+    required double yMin,
+    required double yMax,
+    required double yValue,
+    int dashLength = 0,
+  }) {
+    Paint paintAxis = Paint()..color = color;
+    paintAxis.strokeWidth = 1;
+    paintAxis.style = PaintingStyle.stroke;
+    if (dashLength > 0) {
+      final count = (xMax - xMin) / dashLength / 2;
+
+      for (int i = 0; i < count; i++) {
+        final p0 = Offset(
+          (i * dashLength).toDouble() * 2,
+          yMin - yValue * heightFactor,
+        );
+        final p1 = Offset(
+          (i * dashLength).toDouble() * 2 + dashLength,
+          yMax - yValue * heightFactor,
+        );
+        canvas.drawLine(p0, p1, paintAxis);
+      }
+    } else {
+      final p0 = Offset(
+        xMin,
+        yMin - yValue * heightFactor,
+      );
+      final p1 = Offset(
+        xMax,
+        yMax - yValue * heightFactor,
+      );
+      canvas.drawLine(p0, p1, paintAxis);
+    }
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    //return;
+    double value = listenable.value;
     final height = size.height;
     final width = size.width;
-    const heightFactor = 0.85;
 
-    var paint = Paint()..color = const Color.fromARGB(255, 248, 224, 154);
+    var paint = Paint()..color = AppColors.line;
     paint.strokeWidth = 3;
-    var paintAxis = Paint()..color = const Color.fromARGB(255, 170, 170, 170);
-    paint.strokeWidth = 1;
+    paint.strokeCap = StrokeCap.round;
+    paint.strokeJoin = StrokeJoin.round;
 
-    int step = 1; //max(1, (10.0 * value).ceil());
+    const step = 1;
     for (int i = data.length - 1; i >= 0; i -= step) {
       final index = i.toInt();
       if (index - step < 0) continue;
@@ -42,24 +88,83 @@ class GraphPainter extends CustomPainter {
         canvas.drawCircle(d1, 5.0, paint);
       }
     }
-    final a0 = Offset(
-      0,
-      height + 1 * heightFactor,
+
+    drawAxis(
+      canvas,
+      color: AppColors.axisMin,
+      xMin: 0,
+      xMax: width,
+      yMin: height,
+      yMax: height,
+      yValue: -1,
     );
-    final a1 = Offset(
-      width,
-      height + 1 * heightFactor,
+    drawAxis(
+      canvas,
+      color: AppColors.axis30,
+      xMin: 0,
+      xMax: width,
+      yMin: height,
+      yMax: height,
+      yValue: 29,
+      dashLength: 4,
     );
-    final b0 = Offset(
-      0,
-      height - 121 * heightFactor,
+    drawAxis(
+      canvas,
+      color: AppColors.axis50,
+      xMin: 0,
+      xMax: width,
+      yMin: height,
+      yMax: height,
+      yValue: 49,
+      dashLength: 4,
     );
-    final b1 = Offset(
-      width,
-      height - 121 * heightFactor,
+    drawAxis(
+      canvas,
+      color: AppColors.axis70,
+      xMin: 0,
+      xMax: width,
+      yMin: height,
+      yMax: height,
+      yValue: 69,
+      dashLength: 4,
     );
-    canvas.drawLine(a0, a1, paintAxis);
-    canvas.drawLine(b0, b1, paintAxis);
+    drawAxis(
+      canvas,
+      color: AppColors.axis100,
+      xMin: 0,
+      xMax: width,
+      yMin: height,
+      yMax: height,
+      yValue: 99,
+      dashLength: 4,
+    );
+    drawAxis(
+      canvas,
+      color: AppColors.axisMax,
+      xMin: 0,
+      xMax: width,
+      yMin: height,
+      yMax: height,
+      yValue: 121,
+    );
+    const maxSpeed = 120;
+    if (data.first >= maxSpeed && value % 2 == 0) {
+      final Paint paint = Paint();
+      paint.color = Color.lerp(
+            const Color.fromARGB(0, 255, 255, 255),
+            const Color.fromARGB(255, 255, 255, 255),
+            data.first / maxSpeed,
+          ) ??
+          const Color(0x00000000);
+      canvas.drawRect(
+        Rect.fromCenter(
+          center: Offset(width / 2, height / 2),
+          width: 1080,
+          height: 2400,
+        ),
+        paint,
+      );
+    }
   }
 
   @override

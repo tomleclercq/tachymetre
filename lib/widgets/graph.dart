@@ -21,12 +21,41 @@ class Graph extends StatefulWidget {
 
 class _GraphState extends State<Graph> with SingleTickerProviderStateMixin {
   AnimationController? _controller;
+  Animation? _animation;
   final List<double> _data = [];
   String timestamp = DateTime.now().toIso8601String();
 
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(
+        milliseconds: 700,
+      ),
+    );
+    _animation = Tween<double>(
+      begin: 0.0,
+      end: 3.0,
+    ).animate(_controller!);
+    //_controller?.repeat();
+
+    _animation?.addStatusListener((status) {
+      switch (status) {
+        case AnimationStatus.dismissed:
+          _controller?.forward();
+          break;
+        case AnimationStatus.forward:
+          break;
+        case AnimationStatus.reverse:
+          break;
+        case AnimationStatus.completed:
+          _controller?.reverse();
+          break;
+      }
+    });
+
+    _controller?.forward();
 
     Timer.periodic(const Duration(milliseconds: 250), (timer) {
       addDataPoint(widget.input);
@@ -37,14 +66,10 @@ class _GraphState extends State<Graph> with SingleTickerProviderStateMixin {
   }
 
   void addDataPoint(double data) {
-    if (_data.length >= widget.width) {
-      debugPrint('removed _data[${_data.length}]: ${_data.last}');
+    if (_data.length >= 870) {
       _data.removeLast();
     }
-    _data.insert(
-      0,
-      data,
-    );
+    _data.insert(0, data);
   }
 
   @override
@@ -53,8 +78,10 @@ class _GraphState extends State<Graph> with SingleTickerProviderStateMixin {
     return CustomPaint(
       willChange: true,
       painter: GraphPainter(
+        context,
         data: _data,
         timestamp: timestamp,
+        listenable: _animation!,
       ),
       child: widget.child,
     );

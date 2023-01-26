@@ -1,12 +1,15 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tachymetre/utils/display_utils.dart';
+import 'package:tachymetre/utils/utils.dart';
 import 'package:tachymetre/widgets/tachymetre.dart';
 
 bool devMode = false;
 void main() {
+  devMode = kDebugMode;
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -19,22 +22,6 @@ void main() {
   runApp(const MyApp());
 }
 
-MaterialColor mycolor = const MaterialColor(
-  0xFF558B2F,
-  <int, Color>{
-    50: Color(0xff2C2C2C),
-    100: Color(0xFF4C4C4C),
-    200: Color(0xFF5C5C5C),
-    300: Color(0xFF6C6C6C),
-    400: Color(0xFF7C7C7C),
-    500: Color(0xFF8C8C8C),
-    600: Color(0xFF9C9C9C),
-    700: Color(0xFFACACAC),
-    800: Color(0xFFBCBCBC),
-    900: Color(0xFFCCCCCC),
-  },
-);
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -45,7 +32,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: mycolor,
+        primarySwatch: AppColors.colorSwatches,
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
@@ -64,8 +51,6 @@ class _MyHomePageState extends State<MyHomePage> {
   int quarterTurns = devMode ? 0 : 3;
   bool mirror = !devMode;
   double brightness = 1.0;
-
-  bool get isHorizontal => quarterTurns % 2 == 0;
 
   @override
   void initState() {
@@ -118,23 +103,25 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     final screen = MediaQuery.of(context).size;
     return Scaffold(
-//      extendBody :true,
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onDoubleTap: () => setState(() {
-          mirror = !mirror;
-          quarterTurns += 2;
-          if (quarterTurns >= 4) {
-            quarterTurns -= 4;
-          }
-        }),
-        onTap: () => setState(() {
-          quarterTurns++;
-          if (quarterTurns >= 4) {
-            quarterTurns -= 4;
-          }
-          //textDisplayed = '120.$quarterTurns';
-        }),
+        onDoubleTap: () {
+          setState(() {
+            mirror = !mirror;
+            quarterTurns += 2;
+            if (quarterTurns >= 4) {
+              quarterTurns -= 4;
+            }
+          });
+        },
+        onTap: () {
+          setState(() {
+            quarterTurns++;
+            if (quarterTurns >= 4) {
+              quarterTurns -= 4;
+            }
+          });
+        },
         child: Container(
           color: Colors.black,
           child: Center(
@@ -148,7 +135,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Tachymetre(
-                        width: isHorizontal ? screen.width : screen.height ,
+                        width: quarterTurns % 2 == 0
+                            ? screen.width
+                            : screen.height,
                       ),
                     ),
                   ),
@@ -158,7 +147,6 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
       ),
-
       floatingActionButton: FloatingActionButton(
         onPressed: (() => quit(shouldExit: true)),
         backgroundColor: Colors.black87,

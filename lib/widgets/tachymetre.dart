@@ -3,7 +3,6 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:basic_utils/basic_utils.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,31 +26,24 @@ class _TachymetreState extends State<Tachymetre>
   bool checkDataRequired = false;
 
   Animation<double>? _animation;
+  Timer? _dataChecker;
 
   double get displayedValue {
-    if (_animation != null) {
-      return _animation!.value;
-    } else {
-      return speedInKmphAdjusted;
-    }
+    return _animation != null ? _animation!.value : speedInKmphAdjusted;
   }
 
   String get textDisplayed {
-    if (output != null) return output!;
-    final rounded = MathUtils.round(
-            _animation != null ? _animation!.value : speedInKmphAdjusted, 0)
-        .ceil();
+    final rounded = MathUtils.round(displayedValue, 0).ceil();
     return rounded.addLeadingSpace(3);
   }
 
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(
-        milliseconds: 300,
+        milliseconds: 125,
       ),
     );
 
@@ -71,6 +63,7 @@ class _TachymetreState extends State<Tachymetre>
   void dispose() {
     super.dispose();
     _controller?.dispose();
+    _dataChecker?.cancel();
   }
 
   void initializer() async {
@@ -83,24 +76,26 @@ class _TachymetreState extends State<Tachymetre>
     if (permission.index == 2 || permission.index == 3) {
       const locationSetting = LocationSettings(
         accuracy: LocationAccuracy.bestForNavigation,
-        distanceFilter: 2,
+        distanceFilter: 0,
       );
 
       Geolocator.getPositionStream(locationSettings: locationSetting)
           .listen((position) {
-        debugPrint('new location acquired');
         double speed = position.speed.toKmph;
-        final factor = lerpDouble(0, 3, min(speed, 30) / 30) ?? 0;
+        final factor = lerpDouble(0, 3, min(speed, 45) / 30) ?? 0;
         double speedMpsAdjusted = speed + factor;
 
+        setState(
+          () {
+            positionData = position;
+            output = 'km/h';
+            checkDataRequired = true;
+          },
+        );
         updateSpeed(speedMpsAdjusted);
-        setState(() {
-          positionData = position;
-          output = null;
-          checkDataRequired = true;
-        });
       });
-      Timer.periodic(const Duration(seconds: 1), (timer) {
+
+      _dataChecker = Timer.periodic(const Duration(milliseconds: 500), (timer) {
         if (checkDataRequired && checkData()) {
           reset();
         }
@@ -109,64 +104,55 @@ class _TachymetreState extends State<Tachymetre>
   }
 
   bool checkData() {
-    if (positionData != null) {
-      if (positionData!.timestamp != null) {
-        final dataTime = positionData!.timestamp!;
-        final timeLimit = dataTime.add(const Duration(milliseconds: 2500));
-        final nowUTC = DateTime.now().toUtc();
-        if (nowUTC.isAfter(timeLimit)) {
-          return true;
-        }
+    if (positionData != null && positionData!.timestamp != null) {
+      DateTime timeLimit = positionData!.timestamp!;
+      timeLimit = timeLimit.add(const Duration(milliseconds: 3500));
+      final nowUTC = DateTime.now().toUtc();
+      if (nowUTC.isAfter(timeLimit)) {
+        return true;
       }
     }
     return false;
   }
 
   void updateSpeed(double newSpeedKmph) {
-    _controller!.reset();
-    _controller!.stop();
-
-    debugPrint('newSpeedKmph: $newSpeedKmph');
-    debugPrint('speedInKmphAdjusted: $speedInKmphAdjusted');
-    double timeFactor =
-        1 - (((newSpeedKmph - speedInKmphAdjusted).abs()) / 120);
-    timeFactor = min(max(0, timeFactor), 1);
-    debugPrint('timeFactor: $timeFactor');
-    final newDuration = lerpDuration(
-      const Duration(milliseconds: 200),
-      const Duration(milliseconds: 1000),
-      timeFactor,
-    );
-    debugPrint('newDuration: $newDuration');
-    _controller?.duration = newDuration;
-    _animation = Tween<double>(
-      begin: speedInKmphAdjusted,
-      end: newSpeedKmph,
-    ).animate(_controller!);
-    _controller!.forward();
+    final delta = (newSpeedKmph - speedInKmphAdjusted).abs();
+    if (delta >= 0.2) {
+      _controller!.reset();
+      final timeFactor = max(0.05, min((delta / 120), 0.8)) * 1000;
+      final newDuration =
+          Duration(milliseconds: delta > 30 ? 5 : (timeFactor).toInt());
+      _controller?.duration = newDuration;
+      _animation = Tween<double>(
+        begin: speedInKmphAdjusted,
+        end: newSpeedKmph,
+      ).animate(_controller!);
+      _controller!.forward();
+    }
     setState(() => speedInKmphAdjusted = newSpeedKmph);
   }
 
   void reset() {
+    debugPrint('reset ${DateTime.now().toIso8601String()}');
     updateSpeed(0);
     setState(() {
       checkDataRequired = false;
     });
   }
 
-  Color getTextColor() {
-    Color textColor = const Color.fromARGB(255, 140, 255, 87);
-    if (speedInKmphAdjusted > (30 / 3.6) && speedInKmphAdjusted < (50 / 3.6)) {
-      textColor = const Color.fromARGB(255, 143, 201, 255);
-    }
-    if (speedInKmphAdjusted >= (50 / 3.6) && speedInKmphAdjusted < (90 / 3.6)) {
-      textColor = const Color.fromARGB(255, 255, 188, 150);
-    }
-    if (speedInKmphAdjusted >= (120 / 3.6)) {
-      textColor = const Color.fromARGB(255, 255, 214, 188);
-    }
-    if (speedInKmphAdjusted >= (125 / 3.6)) {
-      textColor = const Color.fromARGB(255, 255, 87, 124);
+  Color getTextColor(double speed) {
+    Color textColor = AppColors.neutral;
+
+    if (speed > 28 && speed <= 32 ||
+        speed >= 48 && speed <= 52 ||
+        speed >= 68 && speed <= 72 ||
+        speed >= 98 && speed <= 102 ||
+        speed >= 118 && speed < 122) {
+      textColor = AppColors.good;
+    } else if (speed >= 122 && speed < 125) {
+      textColor = AppColors.warning;
+    } else if (speed >= 125) {
+      textColor = AppColors.alert;
     }
     return textColor;
   }
@@ -174,25 +160,37 @@ class _TachymetreState extends State<Tachymetre>
   @override
   Widget build(BuildContext context) {
     return Graph(
-      width: widget.width,
+      width: MediaQuery.of(context).size.width,
       input: displayedValue,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Text(
-            textDisplayed,
-            overflow: TextOverflow.fade,
-            softWrap: true,
-            maxLines: 3,
-            style: GoogleFonts.robotoMono(
-              fontWeight: FontWeight.w200,
-              fontSize: output != null
-                  ? 55
-                  : 220, // quarterTurns % 2 == 0 ? 100 : 200,
-              color: getTextColor(),
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                output ?? '-',
+                style: GoogleFonts.robotoMono(
+                  fontWeight: FontWeight.w200,
+                  fontSize: 32,
+                  color: AppColors.neutral,
+                ),
+              ),
+              Text(
+                textDisplayed,
+                style: GoogleFonts.robotoMono(
+                  fontWeight: FontWeight.w200,
+                  fontSize: 220,
+                  color: getTextColor(displayedValue),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 70),
+          SizedBox(
+            height: output != null ? 100 : 70,
+            width: widget.width,
+          ),
         ],
       ),
     );
