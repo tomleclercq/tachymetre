@@ -7,8 +7,8 @@ class AppColors {
   static Color warning = const Color.fromARGB(255, 248, 205, 97);
   static Color alert = const Color.fromARGB(255, 255, 87, 124);
   //Graph
-  //line
   static Color line = const Color.fromARGB(255, 255, 255, 255);
+  static Color point = const Color.fromARGB(255, 151, 251, 249);
 
   ///Axis
   static Color axisMin = const Color.fromARGB(255, 40, 202, 242);
@@ -37,7 +37,7 @@ class AppColors {
 
 String formatNumber(double number) {
   var s = StringUtils.reverse(number.toString());
-  s = StringUtils.addCharAtPosition(s, " ", 3, repeat: true);
+  s = StringUtils.addCharAtPosition(s, ' ', 3, repeat: true);
   return StringUtils.reverse(s);
 }
 

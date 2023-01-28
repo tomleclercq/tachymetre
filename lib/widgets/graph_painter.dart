@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:tachymetre/utils/utils.dart';
 
+import '../models/data_point.dart';
+
 class GraphPainter extends CustomPainter {
   GraphPainter(
     this.context, {
     required this.data,
+    required this.history,
     required this.timestamp,
     required this.listenable,
   }) : super(repaint: listenable);
@@ -12,6 +15,7 @@ class GraphPainter extends CustomPainter {
   BuildContext context;
   final String timestamp;
   final List<double> data;
+  final List<DataPoint> history;
   final Animation listenable;
   final heightFactor = 0.85;
 
@@ -62,9 +66,32 @@ class GraphPainter extends CustomPainter {
     final width = size.width;
 
     var paint = Paint()..color = AppColors.line;
+    var paint2 = Paint()..color = AppColors.point;
     paint.strokeWidth = 3;
     paint.strokeCap = StrokeCap.round;
     paint.strokeJoin = StrokeJoin.round;
+
+    for (int i = history.length; i >= 1; i--) {
+      final dataTime = history[history.length - i].positionData!.timestamp!;
+      final time0 = DateTime.now();
+      final time1 = time0.subtract(const Duration(minutes: 15));
+      if (dataTime.isBefore(time1)) {
+        continue;
+      }
+
+      ///x:
+      ///time0: x = width
+      ///time1: x =
+      final x =
+          width - time0.difference(dataTime).inSeconds.toDouble(); //* (width);
+      final d0 = Offset(
+        x,
+        height -
+            history[history.length - i].positionData!.speed.toKmph *
+                heightFactor,
+      );
+      canvas.drawCircle(d0, 3.0, paint2);
+    }
 
     const step = 1;
     for (int i = data.length - 1; i >= 0; i -= step) {

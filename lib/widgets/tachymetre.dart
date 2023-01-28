@@ -9,6 +9,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:tachymetre/utils/utils.dart';
 import 'package:tachymetre/widgets/graph.dart';
 
+import '../models/data_point.dart';
+
 class Tachymetre extends StatefulWidget {
   const Tachymetre({required this.width, super.key});
   final double width;
@@ -18,18 +20,18 @@ class Tachymetre extends StatefulWidget {
 
 class _TachymetreState extends State<Tachymetre>
     with SingleTickerProviderStateMixin {
+  ///State properties
   AnimationController? _controller;
-
-  double speedInKmphAdjusted = 0;
-  Position? positionData;
-  String? output = "stopped";
-  bool checkDataRequired = false;
-
   Animation<double>? _animation;
+  double _speedInKmphAdjusted = 0;
+  String? _output = 'stopped';
   Timer? _dataChecker;
+  List<DataPoint> _dataHistory = [];
+  Position? positionData;
+  bool dataReset = false;
 
   double get displayedValue {
-    return _animation != null ? _animation!.value : speedInKmphAdjusted;
+    return _animation != null ? _animation!.value : _speedInKmphAdjusted;
   }
 
   String get textDisplayed {
@@ -62,6 +64,7 @@ class _TachymetreState extends State<Tachymetre>
   @override
   void dispose() {
     super.dispose();
+
     _controller?.dispose();
     _dataChecker?.cancel();
   }
@@ -70,7 +73,7 @@ class _TachymetreState extends State<Tachymetre>
     final permission = await Geolocator.requestPermission();
     debugPrint(permission.name);
     setState(() {
-      output = permission.name;
+      _output = permission.name;
     });
 
     if (permission.index == 2 || permission.index == 3) {
@@ -82,21 +85,48 @@ class _TachymetreState extends State<Tachymetre>
       Geolocator.getPositionStream(locationSettings: locationSetting)
           .listen((position) {
         double speed = position.speed.toKmph;
-        final factor = lerpDouble(0, 3, min(speed, 45) / 30) ?? 0;
+        final factor = lerpDouble(0, 1, min(speed, 75) / 100) ?? 0;
         double speedMpsAdjusted = speed + factor;
 
+        DataPoint currentDataPoint = DataPoint(
+          positionData: position,
+          dataReset: false,
+        );
+        bool storeDataPoint = false;
+
+        if (_dataHistory.isEmpty) {
+          storeDataPoint = true;
+        } else {
+          final lastStoredDataPointDelayed =
+              _dataHistory.last.positionData?.timestamp;
+          final diff = lastStoredDataPointDelayed == null
+              ? null
+              : DateTime.now().difference(lastStoredDataPointDelayed).inSeconds;
+          if (diff != null && diff >= 60) {
+            storeDataPoint = true;
+          }
+        }
+        if (storeDataPoint) {
+          final len = _dataHistory.length;
+          debugPrint('StoreData [$len]');
+          if (len > 30) {
+            _dataHistory.removeAt(0);
+          }
+          setState(() => _dataHistory = [..._dataHistory, currentDataPoint]);
+        }
         setState(
           () {
+            _output = 'km/h';
             positionData = position;
-            output = 'km/h';
-            checkDataRequired = true;
+            dataReset = false;
           },
         );
+
         updateSpeed(speedMpsAdjusted);
       });
 
       _dataChecker = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-        if (checkDataRequired && checkData()) {
+        if (!dataReset && checkData()) {
           reset();
         }
       });
@@ -115,29 +145,35 @@ class _TachymetreState extends State<Tachymetre>
     return false;
   }
 
-  void updateSpeed(double newSpeedKmph) {
-    final delta = (newSpeedKmph - speedInKmphAdjusted).abs();
-    if (delta >= 0.2) {
-      _controller!.reset();
-      final timeFactor = max(0.05, min((delta / 120), 0.8)) * 1000;
-      final newDuration =
-          Duration(milliseconds: delta > 30 ? 5 : (timeFactor).toInt());
-      _controller?.duration = newDuration;
-      _animation = Tween<double>(
-        begin: speedInKmphAdjusted,
-        end: newSpeedKmph,
-      ).animate(_controller!);
-      _controller!.forward();
+  void updateSpeed(double newSpeedKmph, {bool reset = false}) {
+    Duration newDuration = const Duration(milliseconds: 16);
+    if (reset) {
+      _controller!.stop();
+    } else {
+      final delta = (newSpeedKmph - _speedInKmphAdjusted).abs();
+      if (delta >= 0.2) {
+        _controller!.reset();
+        final timeFactor = max(0.05, min((delta / 120), 0.8)) * 1000;
+        newDuration =
+            Duration(milliseconds: delta > 30 ? 5 : (timeFactor).toInt());
+        _controller?.duration = newDuration;
+      }
     }
-    setState(() => speedInKmphAdjusted = newSpeedKmph);
+    _animation = Tween<double>(
+      begin: _speedInKmphAdjusted,
+      end: newSpeedKmph,
+    ).animate(_controller!);
+    _controller!.forward();
+    setState(() {
+      dataReset = reset;
+      _speedInKmphAdjusted = newSpeedKmph;
+    });
   }
 
   void reset() {
     debugPrint('reset ${DateTime.now().toIso8601String()}');
-    updateSpeed(0);
-    setState(() {
-      checkDataRequired = false;
-    });
+
+    updateSpeed(0, reset: true);
   }
 
   Color getTextColor(double speed) {
@@ -162,6 +198,7 @@ class _TachymetreState extends State<Tachymetre>
     return Graph(
       width: MediaQuery.of(context).size.width,
       input: displayedValue,
+      history: _dataHistory,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
@@ -170,7 +207,7 @@ class _TachymetreState extends State<Tachymetre>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                output ?? '-',
+                _output ?? '-',
                 style: GoogleFonts.robotoMono(
                   fontWeight: FontWeight.w200,
                   fontSize: 32,
@@ -188,7 +225,7 @@ class _TachymetreState extends State<Tachymetre>
             ],
           ),
           SizedBox(
-            height: output != null ? 100 : 70,
+            height: _output != null ? 100 : 70,
             width: widget.width,
           ),
         ],

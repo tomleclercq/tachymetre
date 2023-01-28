@@ -1,16 +1,16 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+// This file is "main.dart"
 import 'package:tachymetre/utils/display_utils.dart';
 import 'package:tachymetre/utils/utils.dart';
 import 'package:tachymetre/widgets/tachymetre.dart';
 
 bool devMode = false;
 void main() {
-  devMode = kDebugMode;
   WidgetsFlutterBinding.ensureInitialized();
+  //devMode = kDebugMode;
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
         //systemNavigationBarColor: Colors.blue, // navigation bar color
@@ -48,7 +48,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int quarterTurns = devMode ? 0 : 3;
+  int quarterTurns = devMode ? 0 : 0;
   bool mirror = !devMode;
   double brightness = 1.0;
 
@@ -70,7 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void reset() {
     setState(() {
-      quarterTurns = devMode ? 0 : 3;
+      quarterTurns = devMode ? 0 : 0;
       mirror = !devMode;
     });
   }
@@ -108,7 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
         onDoubleTap: () {
           setState(() {
             mirror = !mirror;
-            quarterTurns += 2;
+            quarterTurns += 3;
             if (quarterTurns >= 4) {
               quarterTurns -= 4;
             }

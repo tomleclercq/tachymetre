@@ -3,16 +3,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tachymetre/widgets/graph_painter.dart';
 
+import '../models/data_point.dart';
+
 class Graph extends StatefulWidget {
   const Graph({
     required this.input,
+    required this.history,
     required this.width,
     this.child,
     super.key,
   });
 
-  final double width;
   final double input;
+  final List<DataPoint> history;
+  final double width;
   final Widget? child;
 
   @override
@@ -80,6 +84,7 @@ class _GraphState extends State<Graph> with SingleTickerProviderStateMixin {
       painter: GraphPainter(
         context,
         data: _data,
+        history: widget.history,
         timestamp: timestamp,
         listenable: _animation!,
       ),
