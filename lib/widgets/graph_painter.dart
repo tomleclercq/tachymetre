@@ -175,7 +175,15 @@ class GraphPainter extends CustomPainter {
       yValue: 121,
     );
     const maxSpeed = 120;
-    if (data.first >= maxSpeed && value % 2 == 0) {
+
+    int sampleCount = 2;
+    double average = 0;
+    double totalSpeed =
+        data.getRange(0, sampleCount - 1).fold(0, (p, c) => p + c);
+    if (totalSpeed > 0) {
+      average = totalSpeed / sampleCount;
+    }
+    if ((data.first >= maxSpeed + 5 || average > maxSpeed) && value % 2 == 0) {
       final Paint paint = Paint();
       paint.color = Color.lerp(
             const Color.fromARGB(0, 255, 255, 255),

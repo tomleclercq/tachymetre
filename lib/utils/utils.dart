@@ -48,7 +48,6 @@ extension DoubleExtensions on double {
       toStringAsFixed(2).padLeft(numberOfTotalDigits, '0');
 
   double get toKmph => this * 3.6;
-  double get toMph => this / 3.6;
 }
 
 extension IntExtensions on int {
@@ -61,5 +60,4 @@ extension IntExtensions on int {
       toStringAsFixed(0).padLeft(numberOfTotalDigits, ' ');
 
   double get toKmph => this * 3.6;
-  double get toMph => this / 3.6;
 }

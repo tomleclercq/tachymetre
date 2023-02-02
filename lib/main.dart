@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // This file is "main.dart"
@@ -10,7 +11,6 @@ import 'package:tachymetre/widgets/tachymetre.dart';
 bool devMode = false;
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  //devMode = kDebugMode;
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
         //systemNavigationBarColor: Colors.blue, // navigation bar color
@@ -19,6 +19,7 @@ void main() {
         ),
   );
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.leanBack);
+  devMode = kDebugMode;
   runApp(const MyApp());
 }
 

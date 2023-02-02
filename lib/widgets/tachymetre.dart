@@ -84,36 +84,10 @@ class _TachymetreState extends State<Tachymetre>
 
       Geolocator.getPositionStream(locationSettings: locationSetting)
           .listen((position) {
+        storeData(position);
+
         double speed = position.speed.toKmph;
-        final factor = lerpDouble(0, 1, min(speed, 75) / 100) ?? 0;
-        double speedMpsAdjusted = speed + factor;
 
-        DataPoint currentDataPoint = DataPoint(
-          positionData: position,
-          dataReset: false,
-        );
-        bool storeDataPoint = false;
-
-        if (_dataHistory.isEmpty) {
-          storeDataPoint = true;
-        } else {
-          final lastStoredDataPointDelayed =
-              _dataHistory.last.positionData?.timestamp;
-          final diff = lastStoredDataPointDelayed == null
-              ? null
-              : DateTime.now().difference(lastStoredDataPointDelayed).inSeconds;
-          if (diff != null && diff >= 60) {
-            storeDataPoint = true;
-          }
-        }
-        if (storeDataPoint) {
-          final len = _dataHistory.length;
-          debugPrint('StoreData [$len]');
-          if (len > 30) {
-            _dataHistory.removeAt(0);
-          }
-          setState(() => _dataHistory = [..._dataHistory, currentDataPoint]);
-        }
         setState(
           () {
             _output = 'km/h';
@@ -121,8 +95,11 @@ class _TachymetreState extends State<Tachymetre>
             dataReset = false;
           },
         );
+        final factor = lerpDouble(0, 3.5, min(speed, 46) / 46) ?? 0;
 
-        updateSpeed(speedMpsAdjusted);
+//        final factor = lerpDouble(0, 3, min(30 - max(30, speed), 47) / 47) ?? 0;
+        double speedAdjusted = speed + factor;
+        updateSpeed(speedAdjusted);
       });
 
       _dataChecker = Timer.periodic(const Duration(milliseconds: 500), (timer) {
@@ -131,6 +108,33 @@ class _TachymetreState extends State<Tachymetre>
         }
       });
     } // while in use || always
+  }
+
+  void storeData(Position position) {
+    DataPoint currentDataPoint = DataPoint(
+      positionData: position,
+      dataReset: false,
+    );
+    bool storeDataPoint = false;
+    if (_dataHistory.isEmpty) {
+      storeDataPoint = true;
+    } else {
+      final lastStoredDataPointDelayed =
+          _dataHistory.last.positionData?.timestamp;
+      final diff = lastStoredDataPointDelayed == null
+          ? null
+          : DateTime.now().difference(lastStoredDataPointDelayed).inSeconds;
+      if (diff != null && diff >= 60) {
+        storeDataPoint = true;
+      }
+    }
+    if (storeDataPoint) {
+      final len = _dataHistory.length;
+      if (len > 30) {
+        _dataHistory.removeAt(0);
+      }
+      setState(() => _dataHistory = [..._dataHistory, currentDataPoint]);
+    }
   }
 
   bool checkData() {
@@ -150,10 +154,10 @@ class _TachymetreState extends State<Tachymetre>
     if (reset) {
       _controller!.stop();
     } else {
-      final delta = (newSpeedKmph - _speedInKmphAdjusted).abs();
-      if (delta >= 0.2) {
+      final delta = (_speedInKmphAdjusted - newSpeedKmph).abs();
+      if (delta >= 0.5) {
         _controller!.reset();
-        final timeFactor = max(0.05, min((delta / 120), 0.8)) * 1000;
+        final timeFactor = max(0.05, min((delta / 30), 1)) * 1000;
         newDuration =
             Duration(milliseconds: delta > 30 ? 5 : (timeFactor).toInt());
         _controller?.duration = newDuration;
@@ -203,6 +207,7 @@ class _TachymetreState extends State<Tachymetre>
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Row(
+            mainAxisSize: MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
