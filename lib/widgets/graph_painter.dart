@@ -174,23 +174,23 @@ class GraphPainter extends CustomPainter {
       yMax: height,
       yValue: 121,
     );
-    const maxSpeed = 120;
+    const speedLimit = 120;
+    const maxSpeed = speedLimit + 5;
 
-    int sampleCount = 2;
+    int sampleCount = 3;
+    final range = data.getRange(0, sampleCount);
+    double totalSpeed = range.fold(0, (p, c) => p + c);
     double average = 0;
-    double totalSpeed =
-        data.getRange(0, sampleCount - 1).fold(0, (p, c) => p + c);
     if (totalSpeed > 0) {
       average = totalSpeed / sampleCount;
     }
-    if ((data.first >= maxSpeed + 5 || average > maxSpeed) && value % 2 == 0) {
+    if ((data.first >= maxSpeed || average > speedLimit) && value % 2 == 0) {
       final Paint paint = Paint();
       paint.color = Color.lerp(
-            const Color.fromARGB(0, 255, 255, 255),
-            const Color.fromARGB(255, 255, 255, 255),
-            data.first / maxSpeed,
-          ) ??
-          const Color(0x00000000);
+        const Color.fromARGB(0, 255, 255, 255),
+        const Color.fromARGB(255, 255, 255, 255),
+        data.first / maxSpeed,
+      )!;
       canvas.drawRect(
         Rect.fromCenter(
           center: Offset(width / 2, height / 2),
